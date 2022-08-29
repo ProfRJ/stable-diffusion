@@ -16,8 +16,10 @@ from ldm.util import ismap
 import time
 from omegaconf import OmegaConf
 import requests
+import PIL
 from PIL import Image
 from torchvision.transforms import functional as TF
+import math
 
 def add_noise(sample: torch.Tensor, noise_amt: float):
     return sample + torch.randn(sample.shape, device=sample.device) * noise_amt
@@ -68,7 +70,7 @@ def split_weighted_subprompts(text):
     return prompts, weights
 
 def setres(image_shape, W, H):
-    image_size, _, _ = image_shape.partition(' |')
+    image_shape, _, _ = image_shape.partition(' |')
     return {
         "Custom": (W, H),
         "Square": (512, 512),
@@ -105,6 +107,21 @@ def load_img(path, shape):
     image = TF.center_crop(image, shape[::-1])
     return 2.*image - 1.
     
+
+def make_grid(images):
+    mode = images[0].mode
+    size = images[0].size
+
+    n = len(images)
+    x = math.ceil(n**0.5)
+    y = math.ceil(n / x)
+
+    output = Image.new(mode, (size[0] * x, size[1] * y))
+    for i, image in enumerate(images):
+        cur_x, cur_y = i % x, i // x
+        output.paste(image, (size[0] * cur_x, size[1] * cur_y))
+    return output
+
 
 def download_models(mode):
 
