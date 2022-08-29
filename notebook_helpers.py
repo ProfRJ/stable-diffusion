@@ -15,7 +15,93 @@ from ldm.util import ismap
 import time
 from omegaconf import OmegaConf
 
+def add_noise(sample: torch.Tensor, noise_amt: float):
+    return sample + torch.randn(sample.shape, device=sample.device) * noise_amt
 
+
+def split_weighted_subprompts(text):
+    """
+    grabs all text up to the first occurrence of ':' 
+    uses the grabbed text as a sub-prompt, and takes the value following ':' as weight
+    if ':' has no value defined, defaults to 1.0
+    repeats until no text remaining
+    """
+    remaining = len(text)
+    prompts = []
+    weights = []
+    while remaining > 0:
+        if ":" in text:
+            idx = text.index(":") # first occurrence from start
+            # grab up to index as sub-prompt
+            prompt = text[:idx]
+            remaining -= idx
+            # remove from main text
+            text = text[idx+1:]
+            # find value for weight 
+            if " " in text:
+                idx = text.index(" ") # first occurence
+            else: # no space, read to end
+                idx = len(text)
+            if idx != 0:
+                try:
+                    weight = float(text[:idx])
+                except: # couldn't treat as float
+                    print(f"Warning: '{text[:idx]}' is not a value, are you missing a space?")
+                    weight = 1.0
+            else: # no value found
+                weight = 1.0
+            # remove from main text
+            remaining -= idx
+            text = text[idx+1:]
+            # append the sub-prompt and its weight
+            prompts.append(prompt)
+            weights.append(weight)
+        else: # no : found
+            if len(text) > 0: # there is still text though
+                # take remainder as weight 1
+                prompts.append(text)
+                weights.append(1.0)
+            remaining = 0
+    return prompts, weights
+
+def setres(image_shape, W, H):
+    image_size, _, _ = image_shape.partition(' |')
+    return {
+        "Custom": (W, H),
+        "Square": (512, 512),
+        "Large Square": (768, 768),
+        "Landscape": (704, 512),
+        "Large Landscape": (767, 640),
+        "Portrait": (512, 704),
+        "Large Portrait": (640, 768)  
+    }.get(image_shape)
+
+def get_output_folder(output_path,batch_folder=None):
+    yearMonth = time.strftime('%Y-%m/')
+    out_path = os.path.join(output_path,yearMonth)
+    if batch_folder != "":
+        out_path = os.path.join(out_path,batch_folder)
+        # we will also make sure the path suffix is a slash if linux and a backslash if windows
+        if out_path[-1] != os.path.sep:
+            out_path += os.path.sep
+    os.makedirs(out_path, exist_ok=True)
+    return out_path
+
+def load_img(path, shape):
+    if path.startswith('http://') or path.startswith('https://'):
+        image = Image.open(requests.get(path, stream=True).raw).convert('RGB')
+    else:
+        image = Image.open(path).convert('RGB')
+
+    # fac = max(size[0] / image.size[0], size[1] / image.size[1])
+    # image = image.resize((int(fac * image.size[0]), int(fac * image.size[1])), Image.LANCZOS)
+    # return TF.center_crop(image, size[::-1])
+
+    image = image.resize(shape, resample=Image.LANCZOS)
+    image = np.array(image).astype(np.float16) / 255.0
+    image = image[None].transpose(0, 3, 1, 2)
+    image = torch.from_numpy(image)
+    return 2.*image - 1.
 def download_models(mode):
 
     if mode == "superresolution":
