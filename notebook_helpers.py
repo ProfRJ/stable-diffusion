@@ -18,7 +18,6 @@ from omegaconf import OmegaConf
 def add_noise(sample: torch.Tensor, noise_amt: float):
     return sample + torch.randn(sample.shape, device=sample.device) * noise_amt
 
-
 def split_weighted_subprompts(text):
     """
     grabs all text up to the first occurrence of ':' 
@@ -102,6 +101,19 @@ def load_img(path, shape):
     image = image[None].transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
     return 2.*image - 1.
+
+def sample_from_cv2(sample: np.ndarray) -> torch.Tensor:
+    sample = ((sample.astype(float) / 255.0) * 2) - 1
+    sample = sample[None].transpose(0, 3, 1, 2).astype(np.float16)
+    sample = torch.from_numpy(sample)
+    return sample
+
+def sample_to_cv2(sample: torch.Tensor) -> np.ndarray:
+    sample_f32 = rearrange(sample.squeeze().cpu().numpy(), "c h w -> h w c").astype(np.float32)
+    sample_f32 = ((sample_f32 * 0.5) + 0.5).clip(0, 1)
+    sample_int8 = (sample_f32 * 255).astype(np.uint8)
+    return sample_int8
+
 def download_models(mode):
 
     if mode == "superresolution":
