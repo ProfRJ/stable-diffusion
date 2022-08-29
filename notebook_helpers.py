@@ -7,6 +7,7 @@ from google.colab import files
 from IPython.display import Image as ipyimg
 import ipywidgets as widgets
 from PIL import Image
+import numpy as np
 from numpy import asarray
 from einops import rearrange, repeat
 import torch, torchvision
@@ -14,6 +15,9 @@ from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import ismap
 import time
 from omegaconf import OmegaConf
+import requests
+from PIL import Image
+from torchvision.transforms import functional as TF
 
 def add_noise(sample: torch.Tensor, noise_amt: float):
     return sample + torch.randn(sample.shape, device=sample.device) * noise_amt
@@ -87,32 +91,20 @@ def get_output_folder(output_path,batch_folder=None):
     return out_path
 
 def load_img(path, shape):
+    
     if path.startswith('http://') or path.startswith('https://'):
         image = Image.open(requests.get(path, stream=True).raw).convert('RGB')
     else:
         image = Image.open(path).convert('RGB')
 
-    # fac = max(size[0] / image.size[0], size[1] / image.size[1])
-    # image = image.resize((int(fac * image.size[0]), int(fac * image.size[1])), Image.LANCZOS)
-    # return TF.center_crop(image, size[::-1])
-
-    image = image.resize(shape, resample=Image.LANCZOS)
+    fac = max(shape[0] / image.size[0], shape[1] / image.size[1])
+    image = image.resize((int(fac * image.size[0]), int(fac * image.size[1])), Image.LANCZOS)
     image = np.array(image).astype(np.float16) / 255.0
     image = image[None].transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
+    image = TF.center_crop(image, shape[::-1])
     return 2.*image - 1.
-
-def sample_from_cv2(sample: np.ndarray) -> torch.Tensor:
-    sample = ((sample.astype(float) / 255.0) * 2) - 1
-    sample = sample[None].transpose(0, 3, 1, 2).astype(np.float16)
-    sample = torch.from_numpy(sample)
-    return sample
-
-def sample_to_cv2(sample: torch.Tensor) -> np.ndarray:
-    sample_f32 = rearrange(sample.squeeze().cpu().numpy(), "c h w -> h w c").astype(np.float32)
-    sample_f32 = ((sample_f32 * 0.5) + 0.5).clip(0, 1)
-    sample_int8 = (sample_f32 * 255).astype(np.uint8)
-    return sample_int8
+    
 
 def download_models(mode):
 
