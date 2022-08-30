@@ -123,6 +123,41 @@ def make_grid(images):
     return output
 
 
+def get_gpu_information(image_size):
+    memory = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total,memory.free', '--format=csv,noheader'], stdout=subprocess.PIPE).stdout.decode('utf-8')
+    memory = memory.split(', ')[1].strip(' MiB')
+    path = f'{os.getcwd()}/stable-diffusion/helpers/gpu-info'
+    f = open(f"{path}/{memory}.txt","r")
+    lines = f.readlines()
+    max_samples = 0
+    for line in lines:
+        line = line.split(' | ')
+        max_res = int(line[1])
+        if max_res >= image_size:
+            max_samples = int(line[0])
+            continue
+        else:
+
+            break
+    return max_samples
+
+
+def split_batches_from_samples(n_samples, image_size):
+    remaining_samples = n_samples
+    batch_size_schedule = []
+    max_samples = get_gpu_information(image_size)
+    batch_sequences = int(math.ceil(n_samples/max_samples))
+    for batch_sequence in range(batch_sequences):
+        while remaining_samples > 1:
+            if remaining_samples/max_samples <= 1:
+                batch_size_schedule.append(remaining_samples)
+                remaining_samples -= remaining_samples
+            else:
+                batch_size_schedule.append(max_samples)
+                remaining_samples -= max_samples
+    return (batch_sequences, batch_size_schedule)
+
+
 def download_models(mode):
 
     if mode == "superresolution":
