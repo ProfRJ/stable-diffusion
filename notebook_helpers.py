@@ -20,6 +20,7 @@ import PIL
 from PIL import Image
 from torchvision.transforms import functional as TF
 import math
+import subprocess
 
 def add_noise(sample: torch.Tensor, noise_amt: float):
     return sample + torch.randn(sample.shape, device=sample.device) * noise_amt
