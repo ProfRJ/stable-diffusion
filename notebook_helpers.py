@@ -167,7 +167,7 @@ def next_seed(args):
     else:
         args.seed = random.randint(0, 2**32)
     return args.seed
-    
+
 
 def download_models(mode):
 
