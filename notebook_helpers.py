@@ -159,6 +159,16 @@ def split_batches_from_samples(n_samples, image_size):
     return (batch_sequences, batch_size_schedule)
 
 
+def next_seed(args):
+    if args.seed_behavior == 'iter':
+        args.seed += 1
+    elif args.seed_behavior == 'fixed':
+        pass # always keep seed the same
+    else:
+        args.seed = random.randint(0, 2**32)
+    return args.seed
+    
+
 def download_models(mode):
 
     if mode == "superresolution":
