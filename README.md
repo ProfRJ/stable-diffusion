@@ -1,3 +1,5 @@
+[![Simple Deforum Stable Diffusion](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ProfRJ/stable-diffusion/blob/main/Simple_Deforum_Stable_Diffusion.ipynb)
+
 # Stable Diffusion
 *Stable Diffusion was made possible thanks to a collaboration with [Stability AI](https://stability.ai/) and [Runway](https://runwayml.com/) and builds upon our previous work:*
 
