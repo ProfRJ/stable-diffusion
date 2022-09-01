@@ -140,6 +140,8 @@ def get_gpu_information(image_size):
         else:
 
             break
+    if max_samples == 0:
+        raise error_message("Specified resolution is too large to fit on vram.")
     return max_samples
 
 
@@ -167,3 +169,6 @@ def next_seed(args):
     else:
         args.seed = random.randint(0, 2**32)
     return args.seed
+
+class error_message(Exception):
+       pass
