@@ -149,7 +149,7 @@ def split_batches_from_samples(n_samples, image_size):
     max_samples = get_gpu_information(image_size)
     batch_sequences = int(math.ceil(n_samples/max_samples))
     for batch_sequence in range(batch_sequences):
-        while remaining_samples > 1:
+        while remaining_samples > 0:
             if remaining_samples/max_samples <= 1:
                 batch_size_schedule.append(remaining_samples)
                 remaining_samples -= remaining_samples
