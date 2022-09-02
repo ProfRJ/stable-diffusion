@@ -1,3 +1,4 @@
+#@title
 from torchvision.datasets.utils import download_url
 from ldm.util import instantiate_from_config
 import torch
@@ -20,6 +21,7 @@ import PIL
 from PIL import Image
 from torchvision.transforms import functional as TF
 import math
+import random
 import subprocess
 
 def add_noise(sample: torch.Tensor, noise_amt: float):
@@ -83,15 +85,29 @@ def setres(image_shape, W, H):
     }.get(image_shape)
 
 def get_output_folder(output_path,batch_folder=None):
-    yearMonth = time.strftime('%Y-%m/')
+    yearMonth = time.strftime('%Y-%m')
     out_path = os.path.join(output_path,yearMonth)
     if batch_folder != "":
         out_path = os.path.join(out_path,batch_folder)
         # we will also make sure the path suffix is a slash if linux and a backslash if windows
-        if out_path[-1] != os.path.sep:
-            out_path += os.path.sep
+        #if out_path[-1] != os.path.sep:
+        #    out_path += os.path.sep
     os.makedirs(out_path, exist_ok=True)
     return out_path
+
+def get_prompts_folder(output_path,batch_folder=None,save_prompts_file=False):
+    yearMonth = time.strftime('%Y-%m/')
+    out_path = os.path.join(output_path,yearMonth)
+    if save_prompts_file:
+      if batch_folder != "":
+        prompts_folder = os.path.join(out_path,batch_folder,'prompts')
+      else:
+        prompts_folder = os.path.join(out_path,'prompts')
+      if out_path[-1] != os.path.sep:
+        out_path += os.path.sep
+    os.makedirs(prompts_folder, exist_ok=True)
+    return prompts_folder
+
 
 def load_img(path, shape):
     
